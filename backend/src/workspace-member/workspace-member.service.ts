@@ -7,80 +7,75 @@ import { PrismaService } from 'prisma/prisma.service';
 export class WorkspaceMemberService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll(userId: string) {
+  async findAll() {
     try {
-      return await this.prisma.workspaceMember.findMany({
-        where: {
-          userId: userId, // Filter workspace members by userId
-        },
+      return await this.prisma.workspaceMember.findMany();
+    } catch (error) {
+      throw new ApolloError('Error fetching workspace members', 'FETCH_ERROR', {
+        detail: error.message,
+      });
+    }
+  }
+
+  async findOne(id: string) {
+    try {
+      const member = await this.prisma.workspaceMember.findUnique({
+        where: { id },
+      });
+
+      if (!member) {
+        throw new ApolloError('Workspace member not found', 'NOT_FOUND');
+      }
+
+      return member;
+    } catch (error) {
+      throw new ApolloError('Error fetching workspace member', 'FETCH_ERROR', {
+        detail: error.message,
+      });
+    }
+  }
+
+  async addMember(data: Prisma.WorkspaceMemberCreateInput) {
+    try {
+      return await this.prisma.workspaceMember.create({
+        data,
       });
     } catch (error) {
-      throw new ApolloError(
-        'Failed to fetch workspace members',
-        'DATABASE_ERROR',
-        {
-          detail: error.message,
-        },
-      );
+      throw new ApolloError('Error adding workspace member', 'CREATE_ERROR', {
+        detail: error.message,
+      });
     }
   }
 
-  async create(data: Prisma.WorkspaceMemberCreateInput) {
+  async updateMember(id: string, data: Prisma.WorkspaceMemberUpdateInput) {
     try {
-      return await this.prisma.workspaceMember.create({ data });
-    } catch (error) {
-      throw new ApolloError(
-        'Failed to create workspace member',
-        'DATABASE_ERROR',
-        {
-          detail: error.message,
-        },
-      );
-    }
-  }
-
-  async update(id: string, data: Prisma.WorkspaceMemberUpdateInput) {
-    try {
-      const workspaceMember = await this.prisma.workspaceMember.update({
+      const member = await this.prisma.workspaceMember.update({
         where: { id },
         data,
       });
 
-      if (!workspaceMember) {
+      if (!member) {
         throw new ApolloError('Workspace member not found', 'NOT_FOUND');
       }
 
-      return workspaceMember;
+      return member;
     } catch (error) {
-      throw new ApolloError(
-        'Failed to update workspace member',
-        'DATABASE_ERROR',
-        {
-          detail: error.message,
-        },
-      );
+      throw new ApolloError('Error updating workspace member', 'UPDATE_ERROR', {
+        detail: error.message,
+      });
     }
   }
 
-  async delete(id: string) {
+  async removeMember(id: string) {
     try {
-      const workspaceMember = await this.prisma.workspaceMember.delete({
+      await this.prisma.workspaceMember.delete({
         where: { id },
       });
-
-      if (!workspaceMember) {
-        throw new ApolloError('Workspace member not found', 'NOT_FOUND');
-      }
-
       return true;
     } catch (error) {
-      throw new ApolloError(
-        'Failed to delete workspace member',
-        'DATABASE_ERROR',
-        {
-          detail: error.message,
-        },
-      );
+      throw new ApolloError('Error removing workspace member', 'DELETE_ERROR', {
+        detail: error.message,
+      });
     }
   }
 }

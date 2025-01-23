@@ -1,8 +1,9 @@
 import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
 import { WorkspaceMemberService } from './workspace-member.service';
 import { WorkspaceMember } from './workspace-member.model';
-import { ApolloError } from 'apollo-server-express';
-import { MemberRole } from '@prisma/client';
+
+import { ApolloError } from 'apollo-server-errors';
+import { MemberRole } from 'src/enums/role';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UseGuards } from '@nestjs/common';
 
@@ -14,11 +15,9 @@ export class WorkspaceMemberResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => [WorkspaceMember])
-  async getWorkspaceMembers(@Context() context) {
+  async getWorkspaceMembers() {
     try {
-      const userId = context.req.user.sub;
-
-      return await this.workspaceMemberService.findAll(userId);
+      return await this.workspaceMemberService.findAll();
     } catch (error) {
       throw new ApolloError('Error fetching workspace members', 'FETCH_ERROR', {
         detail: error.message,
@@ -27,21 +26,34 @@ export class WorkspaceMemberResolver {
   }
 
   @UseGuards(AuthGuard)
+  @Query(() => WorkspaceMember)
+  async getWorkspaceMember(@Args('id') id: string) {
+    try {
+      return await this.workspaceMemberService.findOne(id);
+    } catch (error) {
+      throw new ApolloError('Error fetching workspace member', 'FETCH_ERROR', {
+        detail: error.message,
+      });
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Mutation(() => WorkspaceMember)
-  async createWorkspaceMember(
+  async addWorkspaceMember(
     @Context() context,
-    @Args('role') role: MemberRole,
+    @Args('role') role: MemberRole, // Use MemberRole enum
     @Args('workspaceId') workspaceId: string,
   ) {
     try {
       const userId = context.req.user.sub;
-      return await this.workspaceMemberService.create({
+
+      return await this.workspaceMemberService.addMember({
         role,
         user: { connect: { id: userId } },
         workspace: { connect: { id: workspaceId } },
       });
     } catch (error) {
-      throw new ApolloError('Error creating workspace member', 'CREATE_ERROR', {
+      throw new ApolloError('Error adding workspace member', 'CREATE_ERROR', {
         detail: error.message,
       });
     }
@@ -52,12 +64,13 @@ export class WorkspaceMemberResolver {
   async updateWorkspaceMember(
     @Context() context,
     @Args('id') id: string,
-    @Args('role') role: MemberRole,
+    @Args('role') role: MemberRole, // Use MemberRole enum
     @Args('workspaceId') workspaceId: string,
   ) {
     try {
       const userId = context.req.user.sub;
-      return await this.workspaceMemberService.update(id, {
+
+      return await this.workspaceMemberService.updateMember(id, {
         role,
         user: { connect: { id: userId } },
         workspace: { connect: { id: workspaceId } },
@@ -71,11 +84,11 @@ export class WorkspaceMemberResolver {
 
   @UseGuards(AuthGuard)
   @Mutation(() => Boolean)
-  async deleteWorkspaceMember(@Args('id') id: string) {
+  async removeWorkspaceMember(@Args('id') id: string) {
     try {
-      return await this.workspaceMemberService.delete(id);
+      return await this.workspaceMemberService.removeMember(id);
     } catch (error) {
-      throw new ApolloError('Error deleting workspace member', 'DELETE_ERROR', {
+      throw new ApolloError('Error removing workspace member', 'DELETE_ERROR', {
         detail: error.message,
       });
     }

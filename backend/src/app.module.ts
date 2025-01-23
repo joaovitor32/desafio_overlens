@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthResolver } from './auth/auth.controller';
+import { DocumentModule } from './document/document.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { Module } from '@nestjs/common';
 import { UserModule } from './user/user.module';
@@ -21,6 +22,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
     UserModule,
     WorkspaceModule,
     WorkspaceMemberModule,
+    DocumentModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuthResolver],
