@@ -1,8 +1,9 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
 import { WorkspaceService } from './workspace.service';
 import { Workspace } from './workspace.model';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UseGuards } from '@nestjs/common';
+import { ApolloError } from 'apollo-server-express';
 
 @Resolver(() => Workspace)
 export class WorkspaceResolver {
@@ -16,10 +17,30 @@ export class WorkspaceResolver {
   @UseGuards(AuthGuard)
   @Mutation(() => Workspace)
   async createWorkspace(
+    @Context() context,
     @Args('name') name: string,
     @Args('description', { nullable: true }) description: string,
   ) {
-    return this.workspaceService.create({ name, description });
+    const userId = context.req.user.sub;
+    return this.workspaceService.create({ name, description }, userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Query(() => Workspace)
+  async getWorkspaceDetails(
+    @Context() context,
+    @Args('workspaceId') workspaceId: string,
+  ) {
+    try {
+      const userId = context.req.user.sub;
+
+      return await this.workspaceService.getWorkspaceDetails(
+        workspaceId,
+        userId,
+      );
+    } catch (error) {
+      throw new ApolloError(error.message);
+    }
   }
 
   @UseGuards(AuthGuard)

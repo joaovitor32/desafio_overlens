@@ -17,13 +17,47 @@ export class WorkspaceService {
     }
   }
 
-  async create(data: Prisma.WorkspaceCreateInput) {
+  async create(data: Prisma.WorkspaceCreateInput, userId: string) {
     try {
-      return await this.prisma.workspace.create({ data });
-    } catch (error) {
-      throw new ApolloError('Failed to create workspace', 'DATABASE_ERROR', {
-        detail: error.message,
+      const result = await this.prisma.$transaction(async (prisma) => {
+        const existingWorkspace = await prisma.workspace.findFirst({
+          where: { name: data.name },
+        });
+
+        if (existingWorkspace) {
+          throw new ApolloError(
+            'Workspace with this name already exists',
+            'DUPLICATE_NAME_ERROR',
+            {
+              detail: `A workspace with the name "${data.name}" already exists.`,
+            },
+          );
+        }
+
+        const result = await prisma.workspace.create({
+          data: {
+            ...data,
+            members: {
+              create: {
+                role: 'ADMIN',
+                user: { connect: { id: userId } },
+              },
+            },
+          },
+        });
+
+        return result;
       });
+
+      return result;
+    } catch (error) {
+      throw new ApolloError(
+        'Failed to create workspace and add member',
+        'DATABASE_ERROR',
+        {
+          detail: error.message,
+        },
+      );
     }
   }
 
@@ -62,5 +96,31 @@ export class WorkspaceService {
         detail: error.message,
       });
     }
+  }
+
+  async getWorkspaceDetails(workspaceId: string, userId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: {
+        id: workspaceId,
+      },
+      include: {
+        members: {
+          where: {
+            userId: userId,
+          },
+          select: {
+            role: true,
+            user: true,
+          },
+        },
+        documents: true,
+      },
+    });
+
+    if (!workspace) {
+      throw new Error('Workspace não encontrado');
+    }
+
+    return workspace;
   }
 }

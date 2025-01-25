@@ -78,4 +78,37 @@ export class WorkspaceMemberService {
       });
     }
   }
+
+  async findByWorkspaceAndUser(workspaceId: string, userId: string) {
+    try {
+      const member = await this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId,
+          userId,
+        },
+        include: {
+          user: true,
+          workspace: {
+            include: {
+              documents: true,
+            },
+          },
+        },
+      });
+
+      if (!member) {
+        throw new ApolloError('Workspace member not found', 'NOT_FOUND');
+      }
+
+      return member;
+    } catch (error) {
+      throw new ApolloError(
+        'Error fetching workspace member by workspaceId and userId',
+        'FETCH_ERROR',
+        {
+          detail: error.message,
+        },
+      );
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
 import { DocumentService } from './document.service';
 
 import { ApolloError } from 'apollo-server-errors';
@@ -37,12 +37,14 @@ export class DocumentResolver {
   @UseGuards(AuthGuard)
   @Mutation(() => Document)
   async createDocument(
+    @Context() context,
     @Args('title') title: string,
     @Args('content') content: string,
     @Args('workspaceId') workspaceId: string,
   ) {
     try {
-      return await this.documentService.create({
+      const userId = context.req.user.sub;
+      return await this.documentService.create(userId, {
         title,
         content,
         workspace: { connect: { id: workspaceId } },
@@ -57,13 +59,15 @@ export class DocumentResolver {
   @UseGuards(AuthGuard)
   @Mutation(() => Document)
   async updateDocument(
+    @Context() context,
     @Args('id') id: string,
     @Args('title') title: string,
     @Args('content') content: string,
     @Args('workspaceId') workspaceId: string,
   ) {
     try {
-      return await this.documentService.update(id, {
+      const userId = context.req.user.sub;
+      return await this.documentService.update(userId, id, {
         title,
         content,
         workspace: { connect: { id: workspaceId } },

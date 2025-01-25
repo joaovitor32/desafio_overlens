@@ -1,5 +1,6 @@
 import { ApolloError } from 'apollo-server-errors';
 import { Injectable } from '@nestjs/common';
+import { MemberRole } from 'src/enums/role';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
@@ -35,8 +36,28 @@ export class DocumentService {
     }
   }
 
-  async create(data: Prisma.DocumentCreateInput) {
+  async create(userId: string, data: Prisma.DocumentCreateInput) {
     try {
+      const workspaceId = data.workspace?.connect?.id;
+
+      if (!workspaceId) {
+        throw new ApolloError('Workspace ID is missing', 'BAD_USER_INPUT');
+      }
+
+      const member = await this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId,
+          userId,
+        },
+      });
+
+      if (!member || member.role !== MemberRole.ADMIN) {
+        throw new ApolloError(
+          'User does not have admin role in the workspace',
+          'FORBIDDEN',
+        );
+      }
+
       return await this.prisma.document.create({
         data,
       });
@@ -47,8 +68,27 @@ export class DocumentService {
     }
   }
 
-  async update(id: string, data: Prisma.DocumentUpdateInput) {
+  async update(userId: string, id: string, data: Prisma.DocumentUpdateInput) {
     try {
+      const workspaceId = data.workspace?.connect?.id;
+
+      const member = await this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId,
+          userId,
+        },
+      });
+
+      if (
+        !member ||
+        (member.role !== MemberRole.ADMIN && member.role !== MemberRole.EDITOR)
+      ) {
+        throw new ApolloError(
+          'User does not have admin or editor role in the workspace',
+          'FORBIDDEN',
+        );
+      }
+
       return await this.prisma.document.update({
         where: { id },
         data,

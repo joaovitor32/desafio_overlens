@@ -1,8 +1,10 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
+
+import { Workspace } from 'src/workspace/workspace.model';
 
 @ObjectType()
 export class Document {
-  @Field()
+  @Field(() => ID)
   id: string;
 
   @Field()
@@ -10,6 +12,9 @@ export class Document {
 
   @Field()
   content: string;
+
+  @Field(() => Workspace)
+  workspace: Workspace;
 
   @Field()
   workspaceId: string;
