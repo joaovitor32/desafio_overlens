@@ -34,4 +34,4 @@ Aprendi novas tecnologias como **GraphQL** e **Shadcdn**, que foram desafios int
 
 ### O que Gostaria de Melhorar
 
-Gostaria de melhorar o **UI/UX**, especialmente o design da interface, para torná-la mais intuitiva e agradável para o usuário. Além disso, há algumas partes do código do frontend que poderiam ser mais refatoradas, e as regras de validação no backend também podem ser aprimoradas para garantir uma maior flexibilidade e segurança no processamento dos dados.
+Gostaria de melhorar o **UI/UX**, especialmente o design da interface, para torná-la mais intuitiva e agradável para o usuário. Além disso, há algumas partes do código do frontend que poderiam ser mais refatoradas para aumentar qualidade de código e para que alguns glitchs não aconteçam, e as regras de validação no backend também podem ser aprimoradas para garantir uma maior flexibilidade e segurança no processamento dos dados.
