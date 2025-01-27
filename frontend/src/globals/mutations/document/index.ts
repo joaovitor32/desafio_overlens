@@ -26,7 +26,14 @@ const EDIT_DOCUMENT_MUTATION = gql`
   }
 `;
 
+const DELETE_DOCUMENT_MUTATION = gql`
+  mutation DeleteDocument($id: String!) {
+    deleteDocument(id: $id) 
+  }
+`;
+
 export {
   EDIT_DOCUMENT_MUTATION,
   CREATE_DOCUMENT_MUTATION,
+  DELETE_DOCUMENT_MUTATION
 };

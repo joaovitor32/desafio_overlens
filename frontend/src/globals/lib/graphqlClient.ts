@@ -1,9 +1,8 @@
 import { GraphQLClient } from 'graphql-request';
 
-const endpoint = 'http://localhost:3000/graphql';
+const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT;
 
-export const graphQLClient = new GraphQLClient(endpoint);
-
+export const graphQLClient = new GraphQLClient(endpoint as unknown as string);
 
 export const fetcher = (query: string, variables = {}, headers = {}) => {
   graphQLClient.setHeaders(headers);

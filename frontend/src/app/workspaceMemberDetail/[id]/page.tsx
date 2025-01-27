@@ -1,23 +1,24 @@
 "use client";
 
+import { CREATE_DOCUMENT_MUTATION, DELETE_DOCUMENT_MUTATION } from "@/globals/mutations/document";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PencilIcon, TrashIcon } from 'lucide-react';
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { CREATE_DOCUMENT_MUTATION } from "@/globals/mutations/document";
+import { DELETE_WORKSPACE_MUTATION } from "@/globals/mutations/workspace";
 import { GET_WORKSPACE_MEMBER_QUERY } from "@/globals/mutations/workspace-member";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberRole } from "@/globals/enums";
-import { PencilIcon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetcher } from "@/globals/lib/graphqlClient";
 import { print } from "graphql";
-import { useState } from "react";
 import { useUserStore } from "@/globals/store/user";
 
 type WorkspaceFormValues = {
@@ -30,7 +31,7 @@ const WorkspaceMemberDetail = () => {
   const { id } = useParams();
 
   const [error, setError] = useState(null)
-  const { push } = useRouter()
+  const { push, back } = useRouter()
 
   const { data: workspacesMembers, error: workspacesMemberError, isValidating }: any = useSWR(
     id ? [GET_WORKSPACE_MEMBER_QUERY.loc?.source.body, id] : null,
@@ -48,6 +49,36 @@ const WorkspaceMemberDetail = () => {
 
   const role = workspacesMembers?.getWorkspaceMemberByWorkspaceAndUser?.role
 
+  const handleDelete = useCallback(async (workspaceId: string) => {
+    try {
+      await fetcher(print(DELETE_WORKSPACE_MUTATION), { id: workspaceId }, {
+        Authorization: `Bearer ${user?.accessToken}`,
+      });
+
+      back()
+      setError(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      const firstErrorMessage = error?.response?.errors?.[0]?.message || "An unexpected error occurred.";
+      setError(firstErrorMessage);
+    }
+  }, [back, user?.accessToken]);
+
+  const handleDeleteDocument = useCallback(async (documentId: string) => {
+    try {
+      await fetcher(print(DELETE_DOCUMENT_MUTATION), { id: documentId }, {
+        Authorization: `Bearer ${user?.accessToken}`,
+      });
+
+      mutate([GET_WORKSPACE_MEMBER_QUERY.loc?.source.body, id]);
+
+      setError(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      const firstErrorMessage = error?.response?.errors?.[0]?.message || "An unexpected error occurred.";
+      setError(firstErrorMessage);
+    }
+  }, [id, user?.accessToken]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<WorkspaceFormValues>();
 
@@ -71,16 +102,6 @@ const WorkspaceMemberDetail = () => {
 
   return (
     <div className="flex h-screen items-start justify-center p-8 space-y-8">
-      {workspacesMemberError && (
-        <Alert variant="destructive" className="w-full max-w-2xl">
-          Error fetching workspace member data
-        </Alert>
-      )}
-      {error && (
-        <Alert variant="destructive" className="w-full max-w-2xl">
-          {error}
-        </Alert>
-      )}
       {isValidating && !workspacesMembers && (
         <div className="space-y-4 w-full max-w-2xl">
           <Skeleton className="h-6 w-full" />
@@ -89,7 +110,17 @@ const WorkspaceMemberDetail = () => {
         </div>
       )}
       {!isValidating && workspacesMembers && (
-        <div className="w-full max-w-7xl flex flex-col  py-8  space-y-8">
+        <div className="w-full max-w-7xl flex flex-col py-8 space-y-8">
+          {workspacesMemberError && (
+            <Alert variant="destructive" className="w-full max-w-2xl">
+              Error fetching workspace member data
+            </Alert>
+          )}
+          {error && (
+            <Alert variant="destructive" className="w-full max-w-2xl">
+              {error}
+            </Alert>
+          )}
           <div className="w-full">
             <Card className="w-full h-full">
               <CardHeader>
@@ -114,11 +145,15 @@ const WorkspaceMemberDetail = () => {
                     <p>Name: {workspace.name}</p>
                     <p>Description: {workspace.description}</p>
                   </div>
+                  {role === MemberRole.ADMIN ?
+                    <Button onClick={(() => handleDelete(workspace.id))}>
+                      Delete workspace
+                    </Button> : null
+                  }
                 </div>
               </CardContent>
             </Card>
           </div>
-
 
           <div className="w-full">
             <Card className="w-full h-full">
@@ -131,7 +166,7 @@ const WorkspaceMemberDetail = () => {
                     <TableRow>
                       <TableCell>Title</TableCell>
                       <TableCell>Created At</TableCell>
-                      <TableCell>Actions</TableCell> {/* Add an Actions column */}
+                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -140,13 +175,20 @@ const WorkspaceMemberDetail = () => {
                         <TableCell>{document.title}</TableCell>
                         <TableCell>{new Date(document.createdAt).toLocaleString()}</TableCell>
                         <TableCell>
-                          {/* Conditional rendering for the edit icon */}
-                          {(role === MemberRole.ADMIN || MemberRole.EDITOR) && (
+                          {(role === MemberRole.ADMIN || role === MemberRole.EDITOR) && (
                             <button
                               className="text-blue-500 hover:text-blue-700"
                               onClick={() => push(`/editDocument?documentId=${document.id}&workspaceId=${id}`)}
                             >
                               <PencilIcon className="w-5 h-5" />
+                            </button>
+                          )}
+                          {role === MemberRole.ADMIN && (
+                            <button
+                              className="text-red-500 hover:text-red-700 ml-2"
+                              onClick={() => handleDeleteDocument(document.id)}
+                            >
+                              <TrashIcon className="w-5 h-5" />
                             </button>
                           )}
                         </TableCell>

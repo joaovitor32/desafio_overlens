@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import React, { useCallback, useState } from "react";
+import React, { Suspense, useCallback, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -97,4 +97,10 @@ const EditDocumentPage = () => {
   );
 };
 
-export default EditDocumentPage;
+const SuspendedEditDocumentPage = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <EditDocumentPage />
+  </Suspense>
+);
+
+export default SuspendedEditDocumentPage;

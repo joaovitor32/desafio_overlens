@@ -24,7 +24,14 @@ const GET_WORKSPACES_QUERY = gql`
   }
 `;
 
+const DELETE_WORKSPACE_MUTATION = gql`
+  mutation DeleteWorkspace($id: String!) {
+    deleteWorkspace(id: $id)
+  }
+`;
+
 export {
   CREATE_WORKSPACE_MUTATION,
-  GET_WORKSPACES_QUERY
+  GET_WORKSPACES_QUERY,
+  DELETE_WORKSPACE_MUTATION
 };

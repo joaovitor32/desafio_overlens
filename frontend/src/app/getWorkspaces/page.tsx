@@ -19,21 +19,18 @@ import { useUserStore } from "@/globals/store/user";
 
 const GetWorkspaces = () => {
   const { user } = useUserStore();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: workspaces, error: workspacesError, isValidating }: any = useSWR(
-    GET_WORKSPACES_QUERY,
+    user?.accessToken ? GET_WORKSPACES_QUERY : null,
     (query) =>
-      fetcher(query as unknown as string, {
-        headers: {
-          Authorization: `Bearer ${user?.accessToken}`,
-        },
+      fetcher(query as unknown as string, {}, {
+        Authorization: `Bearer ${user?.accessToken}`,
       })
   );
 
   return (
-    <div className="flex h-screen items-center justify-center">
+    <div className="h-full pt-4 px-4">
       {workspacesError && (
         <p className="text-red-600 font-semibold text-lg">
           Error fetching workspaces
@@ -49,7 +46,7 @@ const GetWorkspaces = () => {
               <TableRow>
                 <TableHead className="font-bold">Workspace Name</TableHead>
                 <TableHead className="font-bold">Description</TableHead>
-                <TableHead className="font-bold">Actions</TableHead> {/* New column */}
+                <TableHead className="font-bold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -63,12 +60,20 @@ const GetWorkspaces = () => {
                     <TableCell>{workspace.name}</TableCell>
                     <TableCell>{workspace.description}</TableCell>
                     <TableCell>
-                      <Button
-                        className="text-blue-600 hover:underline font-medium"
-                        onClick={() => router.push(`/workspaceMemberDetail/${workspace.id}`)}
-                      >
-                        Details
-                      </Button>
+                      <div className="flex space-x-4">
+                        <Button
+                          className="text-blue-600 hover:underline font-medium"
+                          onClick={() => router.push(`/workspaceMemberDetail/${workspace.id}`)}
+                        >
+                          Workspace details
+                        </Button>
+                        <Button
+                          className="text-blue-600 hover:underline font-medium"
+                          onClick={() => router.push(`/getWorkspaceMembers/${workspace.id}`)}
+                        >
+                          Workspace members
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

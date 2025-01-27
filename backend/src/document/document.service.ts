@@ -58,6 +58,20 @@ export class DocumentService {
         );
       }
 
+      const existingDocument = await this.prisma.document.findFirst({
+        where: {
+          workspaceId,
+          title: data.title,
+        },
+      });
+
+      if (existingDocument) {
+        throw new ApolloError(
+          'A document with the same name already exists in the workspace',
+          'BAD_USER_INPUT',
+        );
+      }
+
       return await this.prisma.document.create({
         data,
       });

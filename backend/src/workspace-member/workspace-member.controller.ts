@@ -15,9 +15,10 @@ export class WorkspaceMemberResolver {
 
   @UseGuards(AuthGuard)
   @Query(() => [WorkspaceMember])
-  async getWorkspaceMembers() {
+  async getWorkspaceMembers(@Context() context, @Args('id') id: string) {
     try {
-      return await this.workspaceMemberService.findAll();
+      const userId = context.req.user.sub;
+      return await this.workspaceMemberService.find(id, userId);
     } catch (error) {
       throw new ApolloError('Error fetching workspace members', 'FETCH_ERROR', {
         detail: error.message,
@@ -40,17 +41,15 @@ export class WorkspaceMemberResolver {
   @UseGuards(AuthGuard)
   @Mutation(() => WorkspaceMember)
   async addWorkspaceMember(
-    @Context() context,
     @Args('role') role: MemberRole,
     @Args('workspaceId') workspaceId: string,
+    @Args('email') email: string,
   ) {
     try {
-      const userId = context.req.user.sub;
-
       return await this.workspaceMemberService.addMember({
         role,
-        user: { connect: { id: userId } },
-        workspace: { connect: { id: workspaceId } },
+        email,
+        workspaceId,
       });
     } catch (error) {
       throw new ApolloError('Error adding workspace member', 'CREATE_ERROR', {

@@ -1,21 +1,21 @@
 # Base image
 FROM node:18
 
-# Create app directory
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
+# Copy and install app dependencies
 COPY package*.json ./
-RUN yarn install
+RUN npm install --legacy-peer-deps
 
-# Copy app source code
+# Copy the application source code
 COPY . .
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Expose the application port
 EXPOSE 3000
 
 # Command to run the app
-CMD ["yarn", "start:dev"]
+CMD ["npm", "run", "start:dev"]

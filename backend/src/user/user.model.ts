@@ -17,7 +17,7 @@ export class User {
   password: string;
 
   @Field(() => [WorkspaceMember])
-  workspaces: WorkspaceMember[];
+  workspacesMember: WorkspaceMember[];
 
   @Field()
   createdAt: Date;

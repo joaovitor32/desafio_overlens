@@ -1,5 +1,6 @@
 import { ApolloError } from 'apollo-server-errors';
 import { Injectable } from '@nestjs/common';
+import { MemberRole } from 'src/enums/role';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
@@ -7,9 +8,19 @@ import { PrismaService } from 'prisma/prisma.service';
 export class WorkspaceMemberService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll() {
+  async find(workspaceId: string, loggedUserId: string) {
     try {
-      return await this.prisma.workspaceMember.findMany();
+      return await this.prisma.workspaceMember.findMany({
+        where: {
+          workspaceId,
+          userId: {
+            not: loggedUserId,
+          },
+        },
+        include: {
+          user: true,
+        },
+      });
     } catch (error) {
       throw new ApolloError('Error fetching workspace members', 'FETCH_ERROR', {
         detail: error.message,
@@ -35,15 +46,55 @@ export class WorkspaceMemberService {
     }
   }
 
-  async addMember(data: Prisma.WorkspaceMemberCreateInput) {
+  async addMember(data: {
+    role: MemberRole;
+    email: string;
+    workspaceId: string;
+  }) {
     try {
+      // 1. Buscar o usuário pelo e-mail
+      const user = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+
+      if (!user) {
+        throw new ApolloError('Usuário não encontrado', 'USER_NOT_FOUND', {
+          email: data.email,
+        });
+      }
+
+      const existingMember = await this.prisma.workspaceMember.findFirst({
+        where: {
+          userId: user.id,
+          workspaceId: data.workspaceId,
+        },
+      });
+
+      if (existingMember) {
+        throw new ApolloError(
+          'Usuário já é membro deste workspace',
+          'MEMBER_EXISTS',
+          {
+            email: data.email,
+          },
+        );
+      }
+
       return await this.prisma.workspaceMember.create({
-        data,
+        data: {
+          role: data.role,
+          user: { connect: { id: user.id } },
+          workspace: { connect: { id: data.workspaceId } },
+        },
       });
     } catch (error) {
-      throw new ApolloError('Error adding workspace member', 'CREATE_ERROR', {
-        detail: error.message,
-      });
+      throw new ApolloError(
+        'Erro ao adicionar membro ao workspace',
+        'CREATE_ERROR',
+        {
+          detail: error.message,
+        },
+      );
     }
   }
 

@@ -7,9 +7,21 @@ import { PrismaService } from 'prisma/prisma.service';
 export class WorkspaceService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll() {
+  async find(userId: string) {
     try {
-      return await this.prisma.workspace.findMany();
+      return await this.prisma.workspace.findMany({
+        where: {
+          members: {
+            some: {
+              userId: userId, // Ensure workspace is related to the given user
+            },
+          },
+        },
+        include: {
+          members: true, // Include the members in the response
+          documents: true, // Include documents in the response
+        },
+      });
     } catch (error) {
       throw new ApolloError('Failed to fetch workspaces', 'DATABASE_ERROR', {
         detail: error.message,
@@ -80,8 +92,20 @@ export class WorkspaceService {
     }
   }
 
-  async delete(id: string) {
+  async delete(id: string, userId: string) {
     try {
+      const member = await this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId: id,
+          userId: userId,
+          role: 'ADMIN',
+        },
+      });
+
+      if (!member) {
+        throw new ApolloError('Unauthorized access', 'UNAUTHORIZED');
+      }
+
       const workspace = await this.prisma.workspace.delete({
         where: { id },
       });

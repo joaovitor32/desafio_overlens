@@ -9,9 +9,11 @@ import { ApolloError } from 'apollo-server-express';
 export class WorkspaceResolver {
   constructor(private readonly workspaceService: WorkspaceService) { }
 
+  @UseGuards(AuthGuard)
   @Query(() => [Workspace])
-  async getWorkspaces() {
-    return this.workspaceService.findAll();
+  async getWorkspaces(@Context() context) {
+    const userId = context.req.user.sub;
+    return this.workspaceService.find(userId);
   }
 
   @UseGuards(AuthGuard)
@@ -55,7 +57,12 @@ export class WorkspaceResolver {
 
   @UseGuards(AuthGuard)
   @Mutation(() => Boolean)
-  async deleteWorkspace(@Args('id') id: string) {
-    return this.workspaceService.delete(id);
+  async deleteWorkspace(@Context() context, @Args('id') id: string) {
+    try {
+      const userId = context.req.user.sub;
+      return this.workspaceService.delete(id, userId);
+    } catch (error) {
+      throw new ApolloError(error.message);
+    }
   }
 }

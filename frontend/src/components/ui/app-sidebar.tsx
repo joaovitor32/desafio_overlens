@@ -10,9 +10,11 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem
 } from "@/components/ui/sidebar"
+import { useCallback, useState } from "react"
 
 import { Inbox } from "lucide-react"
-import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useUserStore } from "@/globals/store/user"
 
 const items = [
   {
@@ -27,15 +29,22 @@ const items = [
 ]
 
 export function AppSidebar() {
-  // State to track which menu is currently open
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
-  const toggleMenu = (title: string) => {
+  const { push } = useRouter()
+  const { clearUser } = useUserStore()
+
+  const toggleMenu = useCallback((title: string) => {
     setOpenMenus((prev) => ({
       ...prev,
       [title]: !prev[title]
     }));
-  };
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    clearUser()
+    push("/")
+  }, [clearUser, push]);
 
   return (
     <Sidebar>
@@ -66,6 +75,11 @@ export function AppSidebar() {
                   )}
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout}>
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
