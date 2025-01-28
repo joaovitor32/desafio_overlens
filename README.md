@@ -10,7 +10,7 @@ Para rodar as aplicações localmente, siga os seguintes passos:
 
    ```
    docker compose up --build -d
-    npx prisma migrate dev --name init
+   npx prisma migrate dev --name init
 
    yarn start
    ```
