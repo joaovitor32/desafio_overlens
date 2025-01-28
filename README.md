@@ -10,8 +10,9 @@ Para rodar as aplicações localmente, siga os seguintes passos:
 
    ```
    docker compose up --build -d
-   npx prisma migrate dev --name init
 
+   yarn
+   npx prisma migrate dev --name init
    yarn start
    ```
 
@@ -21,6 +22,7 @@ Para rodar as aplicações localmente, siga os seguintes passos:
    Navegue até a pasta `frontend` e execute o seguinte comando:
 
    ```
+   yarn
    yarn start
    ```
 
